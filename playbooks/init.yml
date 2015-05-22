@@ -1,0 +1,54 @@
+---
+- hosts: all
+  vars_files:
+    - vars.yml
+  remote_user: "{{app_user}}"
+
+  tasks:
+  - name: install git
+    sudo: true
+    apt:
+      name: git
+      state: latest
+
+  - name: install htop
+    sudo: true
+    apt:
+      name: htop
+      state: latest
+
+  - name: install haproxy
+    sudo: true
+    apt:
+      name: haproxy
+      state: latest
+
+  - name: Copy haproxy
+    sudo: true
+    copy: src=./files/default dest=/etc/default/haproxy owner={{app_user}} group={{app_user}} mode=0644
+
+  - name: Copy haproxy.cfg
+    sudo: true
+    copy: src=./files/haproxy.cfg dest=/etc/haproxy/haproxy.cfg owner={{app_user}} group={{app_user}} mode=0644
+
+  - name: Installing docker
+    sudo: true
+    shell: >
+      wget -qO- https://get.docker.com/ | sh
+    args:
+      creates: /usr/bin/docker
+
+  - name: Restart Docker Service
+    sudo: true
+    shell: >
+      #docker -d -H tcp://0.0.0.0:2376 -H unix:///var/run/docker.sock
+      sudo service docker restart
+
+  - name: Restart haproxy Service
+    sudo: true
+    shell: >
+      sudo service haproxy restart
+
+  - user: name={{app_user}} groups=docker append=yes
+    sudo: true
+
